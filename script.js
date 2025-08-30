@@ -27,7 +27,12 @@ define([
           console.debug('Mount point', mountPoint);
           if(mountPoint){
             console.debug('Mounting app');
-            RightPanelApp.mount(mountPoint);
+            console.debug('App object', RightPanelApp);
+            try{
+              RightPanelApp.mount(mountPoint);
+            } catch (error) {
+              console.debug('App object', error);
+            }
             return true;
           } else {
             console.debug('Mount point not found');
