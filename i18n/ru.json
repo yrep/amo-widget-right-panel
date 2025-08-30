@@ -1,0 +1,11 @@
+{
+  "widget": {
+    "name": "Integrilla",
+    "menu_title": "Integrilla",
+    "short_description": "Integrilla интеграции",
+    "description": "Integrilla интеграции с мессенджерами, рассылки"
+  },
+  "settings": {
+    "id": "Id"
+  }
+}
