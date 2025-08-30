@@ -1,6 +1,12 @@
-define([], function () {
+define([
+  "./components/RightPanelApp.js"
+], function (RightPanelApp) {
   return function () {
     var self = this;
+
+    const utils = {
+    };
+
 
     this.callbacks = {
       settings: function () {
@@ -10,13 +16,29 @@ define([], function () {
 
       render: function () {
         console.debug('[Widget] render');
-
-        self.render_template({
-          caption: { class_name: 'qwerty-widget-caption' },
-          body: '<div id="preact-root">Заглушка виджета</div>',
-          render: ''
-        });
-
+        if (APP.isCard()){
+          console.debug('Card area');
+          self.render_template({
+            caption: { class_name: 'qwerty-widget-caption' },
+            body: '<div id="right-panel-app"></div>',
+            render: ''
+          });
+          var mountPoint = document.querySelector("#right-panel-app");
+          console.debug('Mount point', mountPoint);
+          if(mountPoint){
+            console.debug('Mounting app');
+            RightPanelApp.mount(mountPoint);
+            return true;
+          } else {
+            console.debug('Mount point not found');
+            var error = {
+              header: "Ошибка отображения виджета",
+              text: "Не найден элемент для отображения интерфейса, попробуйте перезагрузить страницу"
+            };
+            APP.notifications.show_message_error(error);
+            return false;
+          }
+        }
         return true;
       },
 
