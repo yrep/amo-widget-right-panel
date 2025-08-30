@@ -1,15 +1,22 @@
 define([
-], function () {
+    './../lib/preact.umd.js'
+], function (preact) {
 
-    const mount = (rootElement) => {
-        if (rootElement) {
-            const div = document.createElement('div');
-            div.textContent = 'Simple App';
-            rootElement.appendChild(div);
-        }
-    };
+    console.debug('Preact is loaded:', preact);
 
-    return {
-        mount: mount,
-    };
+    const { h, render } = preact;
+
+    const App = () => {
+        return h('div', null, 'Preact');
+    };
+
+    const mount = (rootElement) => {
+        if (rootElement) {
+            render(h(App), rootElement);
+        }
+    };
+
+    return {
+        mount: mount,
+    };
 });
