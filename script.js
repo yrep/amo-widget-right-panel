@@ -1,8 +1,13 @@
 define([
-  "./components/RightPanelApp.js"
-], function (RightPanelApp) {
+  "./lib/standalone.umd.min.js",
+  "./app/RightPanelApp.js"
+], function (htmPreact, RightPanelApp) {
   return function () {
-    var self = this;
+    const widget = this;
+    window.htmPreact = htmPreact;
+    const version = 3;
+
+    console.debug('Version', version);
 
     const utils = {
     };
@@ -16,9 +21,11 @@ define([
 
       render: function () {
         console.debug('[Widget] render');
+        console.debug('htmPreact');
+        console.debug(htmPreact);
         if (APP.isCard()){
           console.debug('Card area');
-          self.render_template({
+          widget.render_template({
             caption: { class_name: 'qwerty-widget-caption' },
             body: '<div id="right-panel-app"></div>',
             render: ''
@@ -29,7 +36,7 @@ define([
             console.debug('Mounting app');
             console.debug('App object', RightPanelApp);
             try{
-              RightPanelApp.mount(mountPoint);
+              RightPanelApp.mount(widget, mountPoint, htmPreact);
             } catch (error) {
               console.debug('App object', error);
             }
