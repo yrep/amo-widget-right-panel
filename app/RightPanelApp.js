@@ -2,29 +2,26 @@ define([
     './components/AppForm.js',
     './modules/Utils.js',
     './modules/Api.js',
-    './modules/CardParser.js'
-], function (AppForm, Utils, Api, CardParser) {
+    './modules/CardParser.js',
+    './modules/Validator.js'
+], function (AppForm, Utils, Api, CardParser, Validator) {
 
     const createApp = (htmPreact) => {
         const { html, useState, useEffect } = htmPreact;
 
         const App = ({ widget }) => {
             const domain = widget && widget.system && widget.system().domain ? widget.system().domain : 'unknown';
-
-            const [state, setState] = useState({
-                theme: 'light',
-                domain: domain
-            });
+            const theme = Utils.getTheme();
 
             useEffect(() => {
-                console.debug('Domain:', state.domain);
-                console.debug(Utils.sayHello());
-            }, [state.domain]);
+                console.debug('Domain:', domain);
+                console.debug('Theme:', theme);
+            }, [domain]);
 
             return html`
-                <div class="${state.theme}">
+                <div class="${theme}">
                     <h3>Отправка сообщения</h3>
-                    <${AppForm} widget=${widget} />
+                    <${AppForm} widget=${widget} theme=${theme} />
                 </div>
             `;
         };
@@ -33,12 +30,11 @@ define([
     };
 
     const mount = (widget, rootElement, htmPreact) => {
-        console.debug('Utils', Utils);
-        console.debug('Api', Api);
-        console.debug('Utils say hello', Utils.sayHello());
+        console.debug('Mounting widget...');
         const { html, render } = htmPreact;
         const App = createApp(htmPreact);
         render(html`<${App} widget=${widget} />`, rootElement);
+        console.debug('Widget mounted successfully');
     };
 
     return {

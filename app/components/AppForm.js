@@ -3,9 +3,16 @@ define([
     './MessageTypeSelector.js',
     './PrioritySourceSelector.js',
     './ButtonMessageSend.js',
+    './PhoneSelector.js',
+    './Loader.js',
+    './AppModal.js',
     '../modules/Api.js',
-    '../modules/Utils.js'
-], function(GroupSelector, MessageTypeSelector, PrioritySourceSelector, ButtonMessageSend, Api, Utils) {
+    '../modules/Utils.js',
+    '../modules/Validator.js',
+    '../modules/CardParser.js'
+], function(GroupSelector, MessageTypeSelector, PrioritySourceSelector, 
+    ButtonMessageSend, PhoneSelector, Loader, AppModal, Api, Utils, Validator, CardParser) {
+    
     const AppForm = ({ widget }) => {
         const { html, useState, useEffect } = window.htmPreact;
         
@@ -18,6 +25,11 @@ define([
             prioritySource: '',
             groups: {},
             loading: false,
+            cardData: null,
+            isParsingCard: true,
+            selectedPhone: '',
+            showModal: false,
+            modalStatus: '',
             requestData: {
                 domain: '',
                 widget_code: '',
@@ -28,9 +40,6 @@ define([
         });
         
         useEffect(() => {
-            console.debug('AppForm mounted, loading groups...');
-            
-            // Инициализируем данные для запросов
             const system = widget.system();
             const settings = widget.get_settings();
             
@@ -42,49 +51,73 @@ define([
                 area: system.area
             };
             
-            console.debug('Initial request data:', requestData);
-            
-            setState(prev => ({
-                ...prev,
-                requestData: requestData
-            }));
-            
-            loadGroups(requestData);
+            setState(prev => ({ ...prev, requestData: requestData }));
+            loadAllDataAsync(requestData);
         }, []);
         
-        const loadGroups = (requestData) => {
-            console.debug('Loading groups with data:', requestData);
-            
-            // Для запроса групп используем только domain и widget_code
-            const groupRequestData = {
-                domain: requestData.domain,
-                widget_code: requestData.widget_code,
-                amouser: requestData.amouser,
-                amouser_id: requestData.amouser_id,
-                area: requestData.area
-            };
-            
-            Api.getGroups(widget, groupRequestData, function(response) {
-                console.debug('Groups response received:', response);
-                if (response && response.ok) {
-                    setState(prev => ({
-                        ...prev,
-                        groups: response.data.vendor_groups || {}
-                    }));
-                    console.debug('Groups set to state:', response.data.vendor_groups);
-                } else {
-                    console.debug('Groups loading failed:', response);
-                    Utils.showError(requestData.widget_code, 'Ошибка загрузки групп');
-                }
+        const loadAllDataAsync = async (requestData) => {
+            try {
+                const cardPromise = parseCardDataAsync();
+                const groupsPromise = loadGroupsAsync(requestData);
+                
+                const [cardData, groupsData] = await Promise.all([cardPromise, groupsPromise]);
+                
+                setState(prev => ({
+                    ...prev,
+                    cardData: cardData,
+                    name: cardData.name || '',
+                    to: cardData.phones.length > 0 ? cardData.phones[0].normalized : '',
+                    selectedPhone: cardData.phones.length > 0 ? cardData.phones[0].normalized : '',
+                    groups: groupsData,
+                    isParsingCard: false
+                }));
+                
+            } catch (error) {
+                console.debug('Ошибка загрузки данных:', error);
+                setState(prev => ({
+                    ...prev,
+                    isParsingCard: false,
+                    cardData: { name: '', phonesCount: 0, phones: [] },
+                    groups: {}
+                }));
+                Utils.showError(state.requestData.widget_code, 'Ошибка загрузки данных');
+            }
+        };
+
+        const parseCardDataAsync = async () => {
+            try {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                return CardParser.getCardData();
+            } catch (error) {
+                console.debug('Ошибка парсинга карточки:', error);
+                return { name: '', phonesCount: 0, phones: [] };
+            }
+        };
+
+        const loadGroupsAsync = (requestData) => {
+            return new Promise((resolve, reject) => {
+                const groupRequestData = {
+                    domain: requestData.domain,
+                    widget_code: requestData.widget_code,
+                    amouser: requestData.amouser,
+                    amouser_id: requestData.amouser_id,
+                    area: requestData.area
+                };
+
+                Api.getGroups(widget, groupRequestData, function(response) {
+                    if (response && response.ok) {
+                        resolve(response.data.vendor_groups || {});
+                    } else {
+                        reject(new Error('Не удалось загрузить группы'));
+                    }
+                });
             });
         };
-        
+
         const handleSubmit = (e) => {
             e.preventDefault();
             
-            console.debug('Form submit attempted:', state);
-            
-            if (!validateForm()) {
+            if (!Validator.validateMessageForm(state, state, Utils.showError)) {
                 return;
             }
             
@@ -99,115 +132,140 @@ define([
                 priority_source: state.prioritySource,
                 text: state.text
             };
-            
-            console.debug('Sending message with data:', requestData);
-            
+
             Api.sendMessage(widget, requestData, function(response) {
-                console.debug('Send message response:', response);
-                setState(prev => ({ ...prev, loading: false }));
-                
-                if (response && response.ok) {
-                    console.debug('Message sent successfully');
-                } else {
-                    Utils.showError(state.requestData.widget_code, 'Ошибка отправки сообщения');
-                }
+                setState(prev => ({
+                    ...prev,
+                    loading: false,
+                    showModal: true,
+                    modalStatus: response && response.ok ? 'success' : 'error'
+                }));
             });
         };
         
-        const validateForm = () => {
-            if (!state.name || !state.to || !state.text || !state.selectedGroup) {
-                console.debug('Validation failed: missing required fields');
-                Utils.showError(state.requestData.widget_code, 'Заполните все обязательные поля');
-                return false;
-            }
-            
-            if (state.messageType === 'priority_source' && !state.prioritySource) {
-                console.debug('Validation failed: priority source required');
-                Utils.showError(state.requestData.widget_code, 'Выберите приоритетный источник');
-                return false;
-            }
-            
-            console.debug('Validation passed');
-            return true;
+        const handleCloseModal = () => {
+            setState(prev => ({ ...prev, showModal: false }));
         };
-        
-        const getAvailableSources = () => {
-            const sources = new Set(['sms']);
-            
-            if (state.selectedGroup && state.groups[state.selectedGroup]) {
-                state.groups[state.selectedGroup].forEach(vendor => {
-                    if (vendor.source) {
-                        sources.add(vendor.source === 'whatsapp' ? 'wa' : 
-                                   vendor.source === 'telegram' ? 'tg' : vendor.source);
-                    }
-                });
-            }
-            
-            console.debug('Available sources:', Array.from(sources));
-            return Array.from(sources);
+
+        const handleResetForm = () => {
+            setState(prev => Utils.resetFormState(prev));
+            setState(prev => ({ ...prev, showModal: false }));
         };
-        
+
+        const handleRetry = () => {
+            setState(prev => ({ ...prev, showModal: false, loading: false }));
+        };
+
         return html`
-            <form onSubmit=${handleSubmit}>
-                <div>
-                    <label>Имя:</label>
-                    <input 
-                        type="text" 
-                        value=${state.name}
-                        onInput=${e => setState({ ...state, name: e.target.value })}
-                    />
-                </div>
-                
-                <div>
-                    <label>Телефон:</label>
-                    <input 
-                        type="text" 
-                        value=${state.to}
-                        onInput=${e => setState({ ...state, to: e.target.value })}
-                    />
-                </div>
-                
-                <div>
-                    <label>Группа:</label>
-                    <${GroupSelector}
-                        groups=${state.groups}
-                        selectedGroup=${state.selectedGroup}
-                        onGroupChange=${e => setState({ ...state, selectedGroup: e.target.value })}
-                    />
-                </div>
-                
-                <div>
-                    <label>Тип сообщения:</label>
-                    <${MessageTypeSelector}
-                        messageType=${state.messageType}
-                        onMessageTypeChange=${e => setState({ ...state, messageType: e.target.value, prioritySource: '' })}
-                    />
-                </div>
-                
-                ${state.messageType === 'priority_source' && html`
-                    <div>
-                        <label>Приоритетный источник:</label>
-                        <${PrioritySourceSelector}
-                            prioritySource=${state.prioritySource}
-                            availableSources=${getAvailableSources()}
-                            onPrioritySourceChange=${e => setState({ ...state, prioritySource: e.target.value })}
+            <div>
+                <form onSubmit=${handleSubmit} >
+                    ${state.isParsingCard && html`
+                        <${Loader} isLoading=${true} text="Загружаем данные карточки и группы..."/>
+                    `}
+                    
+                    ${!state.isParsingCard && html`
+                        <div>
+                            <label>Имя:</label>
+                            <input 
+                                type="text" 
+                                value=${state.name}
+                                class="text-input"
+                                style="padding: 5px;"
+                                onInput=${e => setState({ ...state, name: e.target.value })}
+                                disabled=${state.loading}
+                            />
+                        </div>
+                        
+                        <div>
+                            <label>Телефон:</label>
+                            ${state.cardData && state.cardData.phones.length > 0 ? html`
+                                <${PhoneSelector}
+                                    phones=${state.cardData.phones}
+                                    selectedPhone=${state.selectedPhone}
+                                    onPhoneChange=${e => setState({ 
+                                        ...state, 
+                                        selectedPhone: e.target.value,
+                                        to: e.target.value 
+                                    })}
+                                    disabled=${state.loading}
+                                />
+                            ` : html`
+                                <input 
+                                    type="text" 
+                                    value=${state.to}
+                                    onInput=${e => setState({ ...state, to: e.target.value })}
+                                    disabled=${state.loading}
+                                    placeholder="Телефон не найден в карточке"
+                                />
+                            `}
+                        </div>
+                        
+                        <div>
+                            <label>Группа:</label>
+                            <${GroupSelector}
+                                groups=${state.groups}
+                                selectedGroup=${state.selectedGroup}
+                                onGroupChange=${e => setState({ ...state, selectedGroup: e.target.value })}
+                                disabled=${state.loading}
+                            />
+                        </div>
+                        
+                        <div>
+                            <label>Тип сообщения:</label>
+                            <${MessageTypeSelector}
+                                messageType=${state.messageType}
+                                onMessageTypeChange=${e => setState({ 
+                                    ...state, 
+                                    messageType: e.target.value, 
+                                    prioritySource: '' 
+                                })}
+                                disabled=${state.loading}
+                            />
+                        </div>
+                        
+                        ${state.messageType === 'priority_source' && html`
+                            <div>
+                                <label>Приоритетный источник:</label>
+                                <${PrioritySourceSelector}
+                                    prioritySource=${state.prioritySource}
+                                    availableSources=${Utils.getAvailableSources(state.groups, state.selectedGroup)}
+                                    onPrioritySourceChange=${e => setState({ 
+                                        ...state, 
+                                        prioritySource: e.target.value 
+                                    })}
+                                    disabled=${state.loading}
+                                />
+                            </div>
+                        `}
+                        
+                        <div>
+                            <label>Текст сообщения:</label>
+                            <textarea 
+                                value=${state.text}
+                                onInput=${e => setState({ ...state, text: e.target.value })}
+                                class="text-input text-input-textarea"
+                                disabled=${state.loading}
+                                rows="5"
+                            />
+                        </div>
+                        
+                        <${ButtonMessageSend}
+                            onClick=${handleSubmit}
+                            disabled=${state.loading || state.isParsingCard}
+                            loading=${state.loading}
                         />
-                    </div>
-                `}
+                    `}
+                </form>
                 
-                <div>
-                    <label>Текст сообщения:</label>
-                    <textarea 
-                        value=${state.text}
-                        onInput=${e => setState({ ...state, text: e.target.value })}
+                ${state.showModal && html`
+                    <${AppModal} 
+                        status=${state.modalStatus}
+                        onClose=${handleCloseModal}
+                        onReset=${handleResetForm}
+                        onRetry=${handleRetry}
                     />
-                </div>
-                
-                <${ButtonMessageSend}
-                    onClick=${handleSubmit}
-                    disabled=${state.loading}
-                />
-            </form>
+                `}
+            </div>
         `;
     };
     
