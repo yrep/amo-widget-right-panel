@@ -7,16 +7,29 @@
     "interface_version": 2,
     "init_once": false,
     "locale": ["ru"],
-    "installation": true
+    "installation": true,
+    "support": {
+      "link": "https://support.integrilla.io/",
+      "email": "support@integrilla.io"
+    }
   },
   "locations": [
-    "lcard-1"
+    "lcard-1", "settings", "advanced_settings", "widget_page"
   ],
   "settings": {
-    "id": {
-      "name": "settings.id",
-      "type": "text",
+    "custom_code": {
+      "name": "settings.custom_code",
+      "type": "custom",
       "required": false
+    }
+  },
+  "advanced": {
+    "title": "advanced.title"
+  },
+  "left_menu": {
+    "integrilla_main": {
+      "title": "widget.menu_title",
+      "icon": "/images/menu_icon.svg"
     }
   }
 }

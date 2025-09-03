@@ -6,6 +6,9 @@
     "description": "Integrilla интеграции с мессенджерами, рассылки"
   },
   "settings": {
-    "id": "Id"
+    "custom_code": "Код"
+  },
+  "advanced": {
+    "title": "Integrilla настройки"
   }
 }
