@@ -1,4 +1,6 @@
-define([], function() {
+define([
+     "./config.js",
+], function(config) {
     const Api = {
         getGroups: function(widget, data, callback, useFetch = false) {
             // Удаляем ненужное поле target
@@ -6,21 +8,21 @@ define([], function() {
             delete requestData.target;
 
             console.debug('Sending GET_GROUPS request:', {
-                url: 'https://time.developtech.ru/api/v1/message/groups',
+                url: config.GROUPS_URL,
                 data: requestData,
                 useFetch: useFetch
             });
 
             if (useFetch) {
                 return this._fetchRequest(
-                    'https://time.developtech.ru/api/v1/message/groups',
+                    config.GROUPS_URL,
                     requestData,
                     callback
                 );
             }
 
             widget.crm_post(
-                'https://time.developtech.ru/api/v1/message/groups',
+                config.GROUPS_URL,
                 requestData,
                 function(response) {
                     console.debug('GET_GROUPS response:', response);
@@ -36,21 +38,21 @@ define([], function() {
             delete requestData.target;
 
             console.debug('Sending SEND_MESSAGE request:', {
-                url: 'https://time.developtech.ru/api/v1/message/send',
+                url: config.CASCADE_MESSAGE_SEND_URL,
                 data: requestData,
                 useFetch: useFetch
             });
 
             if (useFetch) {
                 return this._fetchRequest(
-                    'https://time.developtech.ru/api/v1/message/send',
+                    config.CASCADE_MESSAGE_SEND_URL,
                     requestData,
                     callback
                 );
             }
 
             widget.crm_post(
-                'https://time.developtech.ru/api/v1/message/send',
+                config.CASCADE_MESSAGE_SEND_URL,
                 requestData,
                 function(response) {
                     console.debug('SEND_MESSAGE response:', response);

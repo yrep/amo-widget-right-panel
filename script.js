@@ -1,13 +1,16 @@
 define([
+  "./config.js",
   "./lib/standalone.umd.min.js",
   "./app/RightPanelApp.js"
-], function (htmPreact, RightPanelApp) {
+], function (config, htmPreact, RightPanelApp) {
 
   // constants
-  const WIDGET_NAME = 'Integrilla';
-  const IFRAME_URL = 'https://home-dev.touch-api.com/widget';
-  const WIDGET_SETTINGS_URL = 'https://amocrm.apitter.com/widget/settings/';
-  const WIDGET_AUTH_URL = 'https://amocrm.developtech.ru/widget/auth/';
+  // TODO to config
+  // const config.WIDGET_NAME = 'Integrilla';
+  // const config.IFRAME_URL = 'https://home-dev.touch-api.com/widget';
+  // const config.WIDGET_SETTINGS_URL = 'https://amocrm.apitter.com/widget/settings/';
+  // const config.WIDGET_AUTH_URL = 'https://amocrm.apitter.com/widget/auth/';
+  // const config.GROUPS_URL = 'https://time.developtech.ru/api/v1/message/groups';
 
   return function IntegrillaWidget() {
     const widget = this;
@@ -126,12 +129,12 @@ define([
 
       fetchAdvancedData: (apiKey, userId, widgetCode, callback) => {
         try {
-          console.debug('Sending request with (' + WIDGET_SETTINGS_URL + '):', {
+          console.debug('Sending request with (' + config.WIDGET_SETTINGS_URL + '):', {
             apiKey, userId, widgetCode
           });
 
           widget.crm_post(
-            WIDGET_SETTINGS_URL,
+            config.WIDGET_SETTINGS_URL,
             { amouser_id: userId },
             ({ name = '', phone = '' }) => callback(name, phone),
             'json',
@@ -193,7 +196,7 @@ define([
       submitFormData: (data, apiKey, widgetCode) => {
         try {
           widget.crm_post(
-            WIDGET_SETTINGS_URL,
+            config.WIDGET_SETTINGS_URL,
             data,
             () => {
               const timestamp = Math.ceil(Date.now() / 1000);
@@ -244,14 +247,14 @@ define([
           const params = new URLSearchParams({
           data: settings.widget_data
           });
-          return `${IFRAME_URL}?${params.toString()}`
+          return `${config.IFRAME_URL}?${params.toString()}`
         } else {
           console.debug('no data in settings');
           const params = new URLSearchParams({
             error: 'unauthorized',
             domain: systemData.domain
           });
-          return `${IFRAME_URL}?${params.toString()}`;
+          return `${config.IFRAME_URL}?${params.toString()}`;
         }
       },
     };
@@ -291,7 +294,7 @@ define([
           }
 
           widget.$authorizedAjax({
-            url: WIDGET_AUTH_URL,
+            url: config.WIDGET_AUTH_URL,
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify(widgetInfo)
@@ -342,7 +345,7 @@ define([
           console.debug(`render error: ${error.message}`);
           const timestamp = Math.floor(Date.now() / 1000);
           APP.notifications.add_error({
-            header: `Ошибка загрузки виджета ${WIDGET_NAME}`,
+            header: `Ошибка загрузки виджета ${config.WIDGET_NAME}`,
             text: `Виджет не может быть загружен`,
             date: timestamp,
           });

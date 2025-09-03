@@ -2,8 +2,8 @@ define([], function() {
     const CardParser = {
         getCardData: function() {
             try {
-                const nameInput = document.querySelector('.js-linked-name-view');
-                const name = nameInput?.value || '';
+                // const nameInput = document.querySelector('.js-linked-name-view');
+                // const name = nameInput?.value || '';
 
                 const phoneInputs = document.querySelectorAll('.control-phone__formatted');
                 const phones = [];
@@ -18,11 +18,11 @@ define([], function() {
                     }
                 });
 
-                console.debug('name', name)
+                //console.debug('name', name)
                 console.debug('phones', phones)
 
                 return {
-                    name: name,
+                    //name: name,
                     phonesCount: phones.length,
                     phones: phones
                 };
@@ -30,7 +30,7 @@ define([], function() {
             } catch (error) {
                 console.debug('CardParser error:', error);
                 return {
-                    name: '',
+                    //name: '',
                     phonesCount: 0,
                     phones: []
                 };

@@ -17,7 +17,7 @@ define([
         const { html, useState, useEffect } = window.htmPreact;
         
         const [state, setState] = useState({
-            name: '',
+            name: 'TODO', //TODO name of the current contact selected
             to: '',
             text: '',
             selectedGroup: '',
@@ -160,24 +160,12 @@ define([
             <div>
                 <form onSubmit=${handleSubmit} >
                     ${state.isParsingCard && html`
-                        <${Loader} isLoading=${true} text="Загружаем данные карточки и группы..."/>
+                        <${Loader} isLoading=${true} text="Загружаем данные..."/>
                     `}
                     
                     ${!state.isParsingCard && html`
                         <div>
-                            <label>Имя:</label>
-                            <input 
-                                type="text" 
-                                value=${state.name}
-                                class="text-input"
-                                style="padding: 5px;"
-                                onInput=${e => setState({ ...state, name: e.target.value })}
-                                disabled=${state.loading}
-                            />
-                        </div>
-                        
-                        <div>
-                            <label>Телефон:</label>
+                            <label class="card-cf-name-label__label">Телефон:</label>
                             ${state.cardData && state.cardData.phones.length > 0 ? html`
                                 <${PhoneSelector}
                                     phones=${state.cardData.phones}
@@ -201,7 +189,7 @@ define([
                         </div>
                         
                         <div>
-                            <label>Группа:</label>
+                            <label class="card-cf-name-label__label">Группа:</label>
                             <${GroupSelector}
                                 groups=${state.groups}
                                 selectedGroup=${state.selectedGroup}
@@ -211,7 +199,7 @@ define([
                         </div>
                         
                         <div>
-                            <label>Тип сообщения:</label>
+                            <label class="card-cf-name-label__label">Тип сообщения:</label>
                             <${MessageTypeSelector}
                                 messageType=${state.messageType}
                                 onMessageTypeChange=${e => setState({ 
@@ -225,7 +213,7 @@ define([
                         
                         ${state.messageType === 'priority_source' && html`
                             <div>
-                                <label>Приоритетный источник:</label>
+                                <label class="card-cf-name-label__label">Приоритетный источник:</label>
                                 <${PrioritySourceSelector}
                                     prioritySource=${state.prioritySource}
                                     availableSources=${Utils.getAvailableSources(state.groups, state.selectedGroup)}
@@ -239,7 +227,7 @@ define([
                         `}
                         
                         <div>
-                            <label>Текст сообщения:</label>
+                            <label class="card-cf-name-label__label">Текст сообщения:</label>
                             <textarea 
                                 value=${state.text}
                                 onInput=${e => setState({ ...state, text: e.target.value })}
