@@ -165,7 +165,7 @@ define([
                     
                     ${!state.isParsingCard && html`
                         <div>
-                            <label class="card-cf-name-label__label">Телефон:</label>
+                            <label class="card-cf-name-label__label integrilla-form__label">Телефон:</label>
                             ${state.cardData && state.cardData.phones.length > 0 ? html`
                                 <${PhoneSelector}
                                     phones=${state.cardData.phones}

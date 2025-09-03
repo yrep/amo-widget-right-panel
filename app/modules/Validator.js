@@ -2,14 +2,14 @@ define([], function() {
     const Validator = {
 
         validateMessageForm: function(formData, state, showError) {
-            const { name, to, text, selectedGroup, messageType, prioritySource, isParsingCard, requestData } = state;
+            const { to, text, selectedGroup, messageType, prioritySource, isParsingCard, requestData } = state;
             
             if (isParsingCard) {
                 showError(requestData.widget_code, 'Данные карточки еще загружаются');
                 return false;
             }
             
-            if (!name || !to || !text || !selectedGroup) {
+            if (!to || !text || !selectedGroup) {
                 console.debug('Validation failed: missing required fields');
                 showError(requestData.widget_code, 'Заполните все обязательные поля');
                 return false;

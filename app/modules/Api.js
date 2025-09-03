@@ -1,5 +1,5 @@
 define([
-     "./config.js",
+     "../../config.js",
 ], function(config) {
     const Api = {
         getGroups: function(widget, data, callback, useFetch = false) {
